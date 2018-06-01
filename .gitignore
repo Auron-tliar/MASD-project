@@ -1,3 +1,7 @@
 /jadex-3.0.86/*
-/tutorial/*
+*/bin/*
+*/Tutorial/*
+*/tutorial/*
+.DS_Store
 /.metadata/*
+/.metadata/
