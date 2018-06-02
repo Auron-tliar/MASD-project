@@ -4,5 +4,7 @@
 *tutorial/*
 .DS_Store
 *.metadata/*
-*.metadata/*
+*.settings/*
+*.classpath*
+*.project*
 *$local.settings.xml
