@@ -6,16 +6,18 @@ import jadex.bdiv3.annotation.Goal;
 public class MaintainGoldGoal {
 	
 	protected int goldAmount;
+	protected float decreaseRate;
 	
-	public MaintainGoldGoal() {
-		
+	public MaintainGoldGoal(float decreaseRate) {
+		this.decreaseRate = decreaseRate;
+		this.goldAmount = 0;
 	}
 	
 	public int getGoldAmount() {
 		return goldAmount;
 	}
 	
-	public void setGoldAmount(int goldAmount) {
-		this.goldAmount = goldAmount;
+	public void addGold(int goldAmount) {
+		this.goldAmount += goldAmount;
 	}
 }

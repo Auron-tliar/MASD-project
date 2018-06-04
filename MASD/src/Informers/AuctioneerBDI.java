@@ -44,8 +44,10 @@ public class AuctioneerBDI {
 	}
 
 	@Plan
-	public void receiveRawQuestPlan(ChangeEvent event)
+	public class SetupAuction
 	{
-	    ChangeInfo<String> change = ((ChangeInfo<String>)event.getValue());
+		public SetupAuction() {
+			
+		}
 	}
 }
