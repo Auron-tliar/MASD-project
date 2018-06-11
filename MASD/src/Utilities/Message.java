@@ -7,75 +7,79 @@ public class Message
 {
 	public enum Performatives {accept, agree, confirm, failure, inform, not_understood, propose, query, refuse, reject}
 	
-	protected final String Sender;
-	protected final String Receiver;
-	protected final Performatives Performative;
-	protected final Object Content;
-	protected final String Protocol;
-	protected final Boolean Broadcast;
+	protected final String sender;
+	protected final String receiver;
+	protected final Performatives performative;
+	protected final Object content;
+	protected final String protocol;
+	protected final Boolean broadcast;
 	
 	public String getSender()
 	{
-		return Sender;
+		return sender;
 	}
 	
 	public String getReceiver()
 	{
-		return Receiver;
+		return receiver;
 	}
 	
 	public Performatives getPerformative()
 	{
-		return Performative;
+		return performative;
 	}
 	
 	public Object getContent()
 	{
-		return Content;
+		return content;
 	}
 	
 	public String getProtocol()
 	{
-		return Protocol;
+		return protocol;
 	}
 	
 	public Boolean getBroadcast()
 	{
-		return Broadcast;
+		return broadcast;
 	}
 	
-	public Message (String sender, String receiver, Object content, String protocol, Boolean broadcast)
+	public Message (String sender, String receiver, Performatives performative, Object content, String protocol, Boolean broadcast)
 	{
-		Sender = sender;
-		Receiver = receiver;
-		Content = content;
-		Protocol = protocol;
-		Broadcast = broadcast;
+		this.sender = sender;
+		this.receiver = receiver;
+		this.performative = performative;
+		this.content = content;
+		this.protocol = protocol;
+		this.broadcast = broadcast;
 	}
 	
 	public Message(Map<String, Object> map)
 	{
-		Sender = (String)map.get("Sender");
-		Receiver = (String)map.get("Receiver");
-		Content = map.get("Content");
-		Protocol = (String)map.get("Protocol");
-		Broadcast = (Boolean)map.get("Broadcast");
+		this.sender = (String)map.get("Sender");
+		this.receiver = (String)map.get("Receiver");
+		this.performative = (Performatives)map.get("Performative");
+		this.content = map.get("Content");
+		this.protocol = (String)map.get("Protocol");
+		this.broadcast = (Boolean)map.get("Broadcast");
 	}
 	
 	public String toString()
 	{
-		return ("[Message]\tSender: " + Sender + "\tReceiver: " + Receiver + "\tContent: " + Content + "\tProtocol: " + Protocol);
+		return ("[Message: " + performative.toString() + "]\tSender: " + sender + "\tReceiver: " + receiver +
+				"\tContent: " + content + "\tProtocol: " + protocol + "\tBroadcast: " + broadcast);
 	}
 	
 	public Map<String, Object> toMap()
 	{
 		Map<String, Object> map = new Hashtable<String, Object>();
 		
-		map.put("Sender", Sender);
-		map.put("Receiver", Receiver);
-		map.put("Content", Content);
-		map.put("Protocol", Protocol);
-		map.put("Broadcast", Broadcast);
+		map.put("Sender", sender);
+		map.put("Receiver", receiver);
+		map.put("Performative", performative);
+		map.put("Content", content);
+		map.put("Protocol", protocol);
+		map.put("Broadcast", broadcast);
 		
 		return map;
 	}
