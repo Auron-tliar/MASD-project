@@ -25,4 +25,17 @@ public class Rumor
 		this.quest = quest;
 		this.components = components;
 	}
+	
+	public Quest Finish()
+	{
+		for (QuestComponent comp : components)
+		{
+			if (!comp.getIsDone())
+			{
+				return null;
+			}
+		}
+		
+		return quest;
+	}
 }

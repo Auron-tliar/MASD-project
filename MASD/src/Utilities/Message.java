@@ -5,8 +5,11 @@ import java.util.Map;
 
 public class Message
 {
+	public enum Performatives {accept, agree, confirm, failure, inform, not_understood, propose, query, refuse, reject}
+	
 	protected final String Sender;
 	protected final String Receiver;
+	protected final Performatives Performative;
 	protected final Object Content;
 	protected final String Protocol;
 	protected final Boolean Broadcast;
@@ -19,6 +22,11 @@ public class Message
 	public String getReceiver()
 	{
 		return Receiver;
+	}
+	
+	public Performatives getPerformative()
+	{
+		return Performative;
 	}
 	
 	public Object getContent()
