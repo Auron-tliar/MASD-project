@@ -7,8 +7,12 @@ public class Main {
     public static void main(String[] args) {
         PlatformConfiguration   config  = PlatformConfiguration.getDefaultNoGui();
 
-        config.addComponent("InformerBDI.class");
-        config.addComponent("Auctioneer.class");
+        config.addComponent("Utilities.MessageServerAgent.class");
+        //config.addComponent("Informers.InformerBDI.class");
+        //config.addComponent("Auctioneer.class");
+
+        config.addComponent("Adventurers.AdventurerBDI.class");
+        config.addComponent("Adventurers.AdventurerBDI.class");
         Starter.createPlatform(config).get();
     }
 }
