@@ -44,4 +44,17 @@ public class Attributes {
 		
 		return descr;
 	}
+	
+	public Boolean greaterOrEqual(Attributes attributes)
+	{
+		for (int i = 0; i < Count; i++) 
+		{
+			if (Values.get(i) < attributes.Values.get(i))
+			{
+				return false;
+			}
+		}
+		
+		return true;
+	}
 }
