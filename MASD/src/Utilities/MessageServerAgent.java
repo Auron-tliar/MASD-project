@@ -19,7 +19,10 @@ import jadex.commons.future.IFuture;
 import jadex.commons.future.ISubscriptionIntermediateFuture;
 import jadex.commons.future.SubscriptionIntermediateFuture;
 import jadex.micro.annotation.Agent;
+import jadex.micro.annotation.AgentArgument;
 import jadex.micro.annotation.AgentCreated;
+import jadex.micro.annotation.Argument;
+import jadex.micro.annotation.Arguments;
 import jadex.micro.annotation.Implementation;
 import jadex.micro.annotation.ProvidedService;
 import jadex.micro.annotation.ProvidedServices;
@@ -27,57 +30,66 @@ import jadex.micro.annotation.ProvidedServices;
 @Agent
 @Service
 @ProvidedServices(@ProvidedService(type=IMessageService.class, implementation=@Implementation(expression="$pojoagent")))
+@Arguments(
+{
+	@Argument(name="id", clazz=String.class)
+})
 public class MessageServerAgent implements IMessageService
 {
 	@Agent
 	protected IInternalAccess agent;
 	
-	protected Integer lastId = -1;
+	@AgentArgument
+	protected String id;
 	
-	protected Map<String, SubscriptionIntermediateFuture<Map<String, Object>>> subscribers;
-	protected Map<String, List<SubscriptionIntermediateFuture<Map<String, Object>>>> subscribersByType;
+	//protected Integer lastId = -1;
+	
+	protected Map<String, SubscriptionIntermediateFuture<Message>> subscribers;
+	protected Map<String, List<SubscriptionIntermediateFuture<Message>>> subscribersByType;
 	
 	@AgentCreated
 	public void agentCreated()
 	{
-		this.subscribers = new HashMap<String, SubscriptionIntermediateFuture<Map<String, Object>>>();
-		this.subscribersByType = new HashMap<String, List<SubscriptionIntermediateFuture<Map<String, Object>>>>();
+		this.subscribers = new HashMap<String, SubscriptionIntermediateFuture<Message>>();
+		this.subscribersByType = new HashMap<String, List<SubscriptionIntermediateFuture<Message>>>();
 	}
 
-	public Pair<ISubscriptionIntermediateFuture<Map<String, Object>>, String> subscribe(String receiver)
+	public ISubscriptionIntermediateFuture<Message> subscribe(String receiver)
 	{
-		SubscriptionIntermediateFuture<Map<String, Object>> ret = 
-				(SubscriptionIntermediateFuture<Map<String, Object>>)SFuture.getNoTimeoutFuture(SubscriptionIntermediateFuture.class, agent);
+		SubscriptionIntermediateFuture<Message> ret = 
+				(SubscriptionIntermediateFuture<Message>)SFuture.getNoTimeoutFuture(SubscriptionIntermediateFuture.class, agent);
 		
-		lastId++;
-		subscribers.put(lastId.toString(), ret);
-		return new Pair<ISubscriptionIntermediateFuture<Map<String, Object>>, String>(ret, lastId.toString());
+		//lastId++;
+		//subscribers.put(lastId.toString(), ret);
+		subscribers.put(receiver, ret);
+		return ret;
 	}
 	
-	public ISubscriptionIntermediateFuture<Map<String, Object>> subscribeType(String type)
+	public ISubscriptionIntermediateFuture<Message> subscribeType(String type)
 	{
-		SubscriptionIntermediateFuture<Map<String, Object>> ret = 
-				(SubscriptionIntermediateFuture<Map<String, Object>>)SFuture.getNoTimeoutFuture(SubscriptionIntermediateFuture.class, agent);
+		SubscriptionIntermediateFuture<Message> ret = 
+				(SubscriptionIntermediateFuture<Message>)SFuture.getNoTimeoutFuture(SubscriptionIntermediateFuture.class, agent);
 		
-		List<SubscriptionIntermediateFuture<Map<String, Object>>> subs = subscribersByType.get(type);
+		List<SubscriptionIntermediateFuture<Message>> subs = subscribersByType.get(type);
 		if(subs==null)
 		{
-			subs = new ArrayList<SubscriptionIntermediateFuture<Map<String, Object>>>();
+			subs = new ArrayList<SubscriptionIntermediateFuture<Message>>();
 			subscribersByType.put(type, subs);
 		}
 		subs.add(ret);
 		return ret;
 	}
 
-	public IFuture<Void> send(Map<String, Object> msg)
+	//public IFuture<Void> send(Map<String, Object> msg)
+	public IFuture<Void> send(Message msg)
 	{
-		if ((Boolean)msg.get("Broadcast"))
+		if (msg.getBroadcast())
 		{
-			if (subscribersByType.containsKey((String)msg.get("Receiver")))
+			if (subscribersByType.containsKey(msg.getReceiver()))
 			{
-				for (Iterator<SubscriptionIntermediateFuture<Map<String, Object>>> it = subscribersByType.get((String)msg.get("Receiver")).iterator(); it.hasNext(); )
+				for (Iterator<SubscriptionIntermediateFuture<Message>> it = subscribersByType.get(msg.getReceiver()).iterator(); it.hasNext(); )
 				{
-					SubscriptionIntermediateFuture<Map<String, Object>> sub = it.next();
+					SubscriptionIntermediateFuture<Message> sub = it.next();
 					if(!sub.addIntermediateResultIfUndone(msg))
 					{
 						System.out.println("Removed: "+sub);
@@ -88,20 +100,20 @@ public class MessageServerAgent implements IMessageService
 		}
 		else
 		{
-			if (subscribers.containsKey((String)msg.get("Receiver")))
+			if (subscribers.containsKey(msg.getReceiver()))
 			{
-				if(!subscribers.get((String)msg.get("Receiver")).addIntermediateResultIfUndone(msg))
+				if(!subscribers.get(msg.getReceiver()).addIntermediateResultIfUndone(msg))
 				{
-					System.out.println("Removed: "+subscribers.get((String)msg.get("Receiver")));
-					subscribers.remove((String)msg.get("Receiver"));
+					System.out.println("Removed: "+subscribers.get(msg.getReceiver()));
+					subscribers.remove(msg.getReceiver());
 				}
 			}
 			else
 			{
-				System.out.println("Unknown message receiver: " + (String)msg.get("Receiver"));
+				System.out.println("Unknown message receiver: " + (String)msg.getReceiver());
 			}
 		}
-		
+
 		return IFuture.DONE;
 	}
 

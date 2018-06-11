@@ -1,14 +1,17 @@
 package Common;
 
+import jadex.commons.transformation.annotations.IncludeFields;
+
+@IncludeFields(includePrivate=true)
 public class QuestComponent
 {
 	public enum Types {Arcana, History, Nature, Religion}
 	
-	protected Integer questId;
-	protected Types type;
-	protected Attributes requirements;
-	protected Double time;
-	protected Boolean isDone;
+	private Integer questId;
+	private Types type;
+	private Attributes requirements;
+	private Double time;
+	private Boolean isDone;
 	
 	public Integer GetQuestId()
 	{

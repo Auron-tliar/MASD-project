@@ -5,14 +5,16 @@ import jadex.base.Starter;
 
 public class Main {
     public static void main(String[] args) {
-        PlatformConfiguration   config  = PlatformConfiguration.getDefaultNoGui();
+        PlatformConfiguration   config  = PlatformConfiguration.getDefault();
+        //PlatformConfiguration   config  = PlatformConfiguration.getDefaultNoGui();
 
-        config.addComponent("Utilities.MessageServerAgent.class");
+        //config.addComponent("Utilities.MessageServerAgent.class");
         //config.addComponent("Informers.InformerBDI.class");
         //config.addComponent("Auctioneer.class");
 
-        config.addComponent("Adventurers.AdventurerBDI.class");
-        config.addComponent("Adventurers.AdventurerBDI.class");
+        //config.addComponent("Adventurers.AdventurerBDI.class");
+        //config.addComponent("Adventurers.AdventurerBDI.class");
+        config.addComponent("Overseers.OverseerAgent.class");
         Starter.createPlatform(config).get();
     }
 }

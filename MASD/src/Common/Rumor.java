@@ -2,12 +2,15 @@ package Common;
 
 import java.util.List;
 
+import jadex.commons.transformation.annotations.IncludeFields;
+
+@IncludeFields(includePrivate=true)
 public class Rumor 
 {
-	protected Integer questId;
-	protected List<QuestComponent> components;
+	private Integer questId;
+	private List<QuestComponent> components;
 	
-	protected Quest quest;
+	private Quest quest;
 	
 	public Integer getQuestId()
 	{
@@ -21,7 +24,7 @@ public class Rumor
 	
 	public Rumor(Quest quest, List<QuestComponent> components)
 	{
-		questId = quest.questId;
+		questId = quest.getQuestId();
 		this.quest = quest;
 		this.components = components;
 	}

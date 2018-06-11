@@ -1,9 +1,12 @@
 package Common;
 
+import jadex.commons.transformation.annotations.IncludeFields;
+
+@IncludeFields(includePrivate=true)
 public class Equipment 
 {
-	protected String name;
-	protected Attributes attributes;
+	private String name;
+	private Attributes attributes;
 	
 	public String getName()
 	{
@@ -14,6 +17,8 @@ public class Equipment
 	{
 		return attributes;
 	}
+	
+	public Equipment() {}
 	
 	public Equipment(String name, Attributes attributes)
 	{

@@ -2,8 +2,12 @@ package Common;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import jadex.commons.transformation.annotations.IncludeFields;
+
 import java.util.Arrays;
 
+@IncludeFields(includePrivate=true)
 public class Attributes {
 	public static final List<String> AttributeNames = Arrays.asList("Might", "Magic", "Cunning");
 	

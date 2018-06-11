@@ -1,11 +1,14 @@
 package Common;
 
+import jadex.commons.transformation.annotations.IncludeFields;
+
+@IncludeFields(includePrivate=true)
 public class Quest
 {
-	protected Integer questId;
-	protected String name;
-	protected Integer reward;
-	protected Attributes requirements;
+	private Integer questId;
+	private String name;
+	private Integer reward;
+	private Attributes requirements;
 	
 	public Integer getQuestId()
 	{
@@ -26,6 +29,8 @@ public class Quest
 	{
 		return requirements;
 	}
+	
+	public Quest() {}
 	
 	public Quest(Integer questId, String name, Integer reward, Attributes requirements)
 	{
