@@ -237,6 +237,16 @@ public class AdventurerBDI
 		}*/
 	}
 	
+	@Goal(excludemode=ExcludeMode.Never, unique=true)
+	public class RetireGoal 
+	{
+		@GoalTargetCondition(beliefs= {"currentGold"})
+		public Boolean checkTarget()
+		{
+			return currentGold >= retirementGold;
+		}
+	}
+	
 	@Goal
 	public class AcquireQuestGoal
 	{
@@ -256,12 +266,6 @@ public class AdventurerBDI
 	
 	@Goal
 	public class ImproveGoal {
-
-	}
-	
-	@Goal
-	public class RetireGoal 
-	{
 
 	}
 
