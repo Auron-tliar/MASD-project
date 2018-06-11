@@ -1,16 +1,37 @@
 package Common;
 
-public class Quest {
-	public final String Name;
+public class Quest
+{
+	protected Integer questId;
+	protected String name;
+	protected Integer reward;
+	protected Attributes requirements;
 	
-	public final Integer Reward;
-	
-	public final Attributes Requirements;
-	
-	public Quest(String name, Integer reward, Attributes requirements)
+	public Integer getQuestId()
 	{
-		Name = name;
-		Reward = reward;
-		Requirements = requirements;
+		return questId;
+	}
+	
+	public String getName()
+	{
+		return name;
+	}
+	
+	public Integer getReward()
+	{
+		return reward;
+	}
+	
+	public Attributes getRequirements()
+	{
+		return requirements;
+	}
+	
+	public Quest(Integer questId, String name, Integer reward, Attributes requirements)
+	{
+		this.questId = questId;
+		this.name = name;
+		this.reward = reward;
+		this.requirements = requirements;
 	}
 }

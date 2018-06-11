@@ -68,6 +68,8 @@ public class AdventurerBDI
 		final ISubscriptionIntermediateFuture<Map<String, Object>> fut = sFut.getKey();
 		id = sFut.getValue();
 		System.out.append("My ID is " + id);
+		
+		/// Change Adventurers to other types ///
 		final ISubscriptionIntermediateFuture<Map<String, Object>> futType = messageServer.subscribeType("Adventurers");
 		
 		fut.addResultListener(new IntermediateDefaultResultListener<Map<String, Object>>()
@@ -86,7 +88,10 @@ public class AdventurerBDI
 			}
 		});
 		
-		IComponentStep<Void> step = new IComponentStep<Void>()
+		
+		// Uncomment for communication testing
+		/*
+		 * IComponentStep<Void> step = new IComponentStep<Void>()
 		{
 			final int[] cnt = new int[1];
 			public IFuture<Void> execute(IInternalAccess ia)
@@ -105,6 +110,7 @@ public class AdventurerBDI
 			}
 		};
 		agent.getComponentFeature(IExecutionFeature.class).waitForDelay(1000, step);
+		*/
 	}
 
 }
