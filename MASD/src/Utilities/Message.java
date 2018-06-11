@@ -3,16 +3,19 @@ package Utilities;
 import java.util.Hashtable;
 import java.util.Map;
 
+import jadex.commons.transformation.annotations.IncludeFields;
+
+@IncludeFields(includePrivate=true)
 public class Message
 {
-	public enum Performatives {accept, agree, confirm, failure, inform, not_understood, propose, query, refuse, reject}
+	public enum Performatives {accept, agree, confirm, failure, inform, not_understood, propose, query, refuse, reject, request}
 	
-	protected final String sender;
-	protected final String receiver;
-	protected final Performatives performative;
-	protected final Object content;
-	protected final String protocol;
-	protected final Boolean broadcast;
+	private String sender;
+	private String receiver;
+	private Performatives performative;
+	private Object content;
+	private String protocol;
+	private Boolean broadcast;
 	
 	public String getSender()
 	{
@@ -44,6 +47,8 @@ public class Message
 		return broadcast;
 	}
 	
+	public Message() {}
+	
 	public Message (String sender, String receiver, Performatives performative, Object content, String protocol, Boolean broadcast)
 	{
 		this.sender = sender;
@@ -66,7 +71,7 @@ public class Message
 	
 	public String toString()
 	{
-		return ("[Message: " + performative.toString() + "]\tSender: " + sender + "\tReceiver: " + receiver +
+		return ("[Message: " + "]\tSender: " + sender + "\tReceiver: " + receiver +
 				"\tContent: " + content + "\tProtocol: " + protocol + "\tBroadcast: " + broadcast);
 	}
 	
