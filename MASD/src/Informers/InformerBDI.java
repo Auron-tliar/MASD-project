@@ -5,11 +5,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
+import Adventurers.AdventurerBDI.AcquireQuestGoal;
+import Adventurers.AdventurerBDI.DoQuestGoal;
+import Adventurers.AdventurerBDI.FormGroupGoal;
+import Adventurers.AdventurerBDI.ImproveGoal;
+import Common.IExpensesAgent;
 import Common.Quest;
 import Utilities.IMessageService;
 import Utilities.Message;
 import jadex.bdiv3.annotation.Belief;
+import jadex.bdiv3.annotation.Deliberation;
 import jadex.bdiv3.annotation.Goal;
+import jadex.bdiv3.annotation.GoalMaintainCondition;
 import jadex.bdiv3.annotation.Plan;
 import jadex.bdiv3.annotation.PlanAborted;
 import jadex.bdiv3.annotation.PlanBody;
@@ -17,6 +24,7 @@ import jadex.bdiv3.annotation.PlanFailed;
 import jadex.bdiv3.annotation.PlanPassed;
 import jadex.bdiv3.annotation.Trigger;
 import jadex.bdiv3.features.IBDIAgentFeature;
+import jadex.bdiv3.model.MProcessableElement.ExcludeMode;
 import jadex.bdiv3.runtime.ChangeEvent;
 import jadex.bridge.service.component.IRequiredServicesFeature;
 import jadex.commons.future.IFuture;
@@ -32,7 +40,7 @@ import jadex.rules.eca.ChangeInfo;
 
 @Agent
 @Description("The informer agent")
-public class InformerBDI {
+public class InformerBDI implements IExpensesAgent {
 
 	@AgentFeature 
 	protected IBDIAgentFeature bdiFeature;
@@ -60,6 +68,14 @@ public class InformerBDI {
 	@Belief
 	protected int currentGold;
 
+	public Integer getPaymentAmount() {
+		return this.paymentAmount;
+	}
+
+	public Integer getCurrentGold() {
+		return this.currentGold;
+	}
+	
 	@Belief(updaterate=1000)
 	protected long currentTime = System.currentTimeMillis();
 
@@ -94,6 +110,10 @@ public class InformerBDI {
 		nextPayment += paymentInterval;
 		
 		return IFuture.DONE;
+	}
+
+	public void Die() {
+		messageServer.send(new Message(id, "Overseer", Message.Performatives.request, "Remove", "", false));
 	}
 	
 	@AgentBody
@@ -134,17 +154,26 @@ public class InformerBDI {
 	@AgentKilled
 	public void shutdown()
 	{
-		messageServer.send(new Message(id, "Overseer", Message.Performatives.request, "Remove", "", false));
+		
 	}
 	
+	@Goal(deliberation=@Deliberation(inhibits={SellQuestGoal.class}), excludemode=ExcludeMode.Never, unique=true)
+	public class PayExpensesGoal
+	{
+		@GoalMaintainCondition(beliefs= {"currentTime","nextPayment"})
+		public Boolean checkMaintain()
+		{
+			return currentTime < nextPayment;
+		}
+	}
 	
 	@Goal
-	public class SellQuest {
+	public class SellQuestGoal {
 		protected Quest quest;
 		protected int price;
 		protected String buyer; // Change type later
 		
-		public SellQuest(Quest quest) {
+		public SellQuestGoal(Quest quest) {
 			
 		}
 		
