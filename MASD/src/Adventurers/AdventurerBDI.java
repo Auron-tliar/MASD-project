@@ -5,15 +5,22 @@ import java.util.Collection;
 import java.util.Hashtable;
 import java.util.concurrent.ThreadLocalRandom;
 
+import Adventurers.AdventurerBDI.AcquireQuestGoal;
+import Adventurers.AdventurerBDI.DoQuestGoal;
+import Adventurers.AdventurerBDI.FormGroupGoal;
+import Adventurers.AdventurerBDI.ImproveGoal;
+//import Common.PayExpensesPlan;
 import Informers.Auction;
 
 import java.util.Iterator;
 import java.util.Map;
 
+import Common.LifeExpensesCapability;
 import Utilities.IMessageService;
 import Utilities.Message;
 import jadex.bdiv3.annotation.Belief;
 import jadex.bdiv3.annotation.Body;
+import jadex.bdiv3.annotation.Capability;
 import jadex.bdiv3.annotation.Deliberation;
 import jadex.bdiv3.annotation.Goal;
 import jadex.bdiv3.annotation.GoalCreationCondition;
@@ -21,6 +28,7 @@ import jadex.bdiv3.annotation.GoalMaintainCondition;
 import jadex.bdiv3.annotation.GoalParameter;
 import jadex.bdiv3.annotation.GoalRecurCondition;
 import jadex.bdiv3.annotation.GoalTargetCondition;
+import jadex.bdiv3.annotation.Mapping;
 import jadex.bdiv3.annotation.Plan;
 import jadex.bdiv3.annotation.Plans;
 import jadex.bdiv3.annotation.Trigger;
@@ -69,7 +77,7 @@ import jadex.micro.annotation.RequiredServices;
 	@Plan(trigger=@Trigger(goals=AdventurerBDI.FormGroupGoal.class), body=@Body(FormGroupPlan.class)),
 	@Plan(trigger=@Trigger(goals=AdventurerBDI.ImproveGoal.class), body=@Body(AskForEquipmentPlan.class), priority=10),
 	@Plan(trigger=@Trigger(goals=AdventurerBDI.ImproveGoal.class), body=@Body(TrainPlan.class), priority=0),
-	@Plan(trigger=@Trigger(goals=AdventurerBDI.PayExpensesGoal.class), body=@Body(PayExpensesPlan.class)),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.LiveGoal.class), body=@Body(DiePlan.class)),
 	@Plan(trigger=@Trigger(goals=AdventurerBDI.RetireGoal.class), body=@Body(RetirePlan.class))
 })
 
@@ -90,7 +98,10 @@ public class AdventurerBDI
 	@AgentArgument
 	protected String id;
 	
-	protected PayExpensesGoal payExpensesGoal;
+	@Capability
+	protected LifeExpensesCapability leCapability = new LifeExpensesCapability();
+	
+	protected LifeExpensesCapability.PayExpensesGoal payExpensesGoal;
 	protected ImproveGoal improveGoal;
 	
 	public String getName()
@@ -101,9 +112,6 @@ public class AdventurerBDI
 	protected static Integer minRetireGold = 20;
 	protected static Integer maxRetireGold = 50;
 	
-	protected long paymentInterval = 30000;
-	
-	protected Integer paymentAmount = 2;
 	
 	protected Integer riskLevel;
 	
@@ -122,14 +130,8 @@ public class AdventurerBDI
 	@Belief
 	protected Common.Attributes attributes;
 	
-	@Belief(updaterate=1000)
-	protected long currentTime = System.currentTimeMillis();
 	
-	@Belief
-	protected long nextPayment;
 	
-	@Belief
-	protected Integer currentGold;
 	
 	@Belief
 	protected Integer retirementGold;
@@ -145,6 +147,11 @@ public class AdventurerBDI
 	
 	
 	
+	public void Die()
+	{
+		System.out.println("Got here");
+		messageServer.send(new Message(id, "Overseer", Message.Performatives.inform, "", "Death", false));
+	}
 	
 
 	/*public Integer getCurrentGold()
@@ -163,43 +170,13 @@ public class AdventurerBDI
 		return announcedAuctions;
 	}*/
 	
-	public Integer payGold(Integer gold)
+	/*public IFuture<Void> setNextPayment()
 	{
-		//System.out.println("Paying gold.");
-		if (currentGold < gold)
-		{
-			return -1;
-		}
-		else
-		{
-			currentGold -= gold;
-			return gold;
-		}
-	}
-	
-	public void receiveGold(Integer gold)
-	{
-		System.out.println("Adventurer " + name + ": Receiving " + gold + " gold.");
-		currentGold += gold;
-		
-		if (currentGold >= retirementGold)
-		{
-			readyToRetire = true;
-		}
-	}
-	
-	public IFuture<Void> setNextPayment()
-	{
-		nextPayment += paymentInterval;
+		//lifeExpensesCapability.nextPayment += paymentInterval;
+		lifeExpensesCapability.setNextPayment();
 		
 		return IFuture.DONE;
-	}
-	
-	public void Die()
-	{
-		bdiFeature.dropGoal(payExpensesGoal);
-		messageServer.send(new Message(id, "Overseer", Message.Performatives.request, "Remove", "", false));
-	}
+	}*/
 	
 	@AgentBody
 	public void body()
@@ -207,7 +184,7 @@ public class AdventurerBDI
 		IFuture<Object> temp = requiredServicesFeature.getRequiredService("messageServer");
 		messageServer = (IMessageService)temp.get();
 		
-		final ISubscriptionIntermediateFuture<Message> fut = messageServer.subscribe(name);
+		final ISubscriptionIntermediateFuture<Message> fut = messageServer.subscribe(id);
 		
 		/// Change Adventurers to other types ///
 		final ISubscriptionIntermediateFuture<Message> futType = messageServer.subscribeType("Adventurers");
@@ -229,27 +206,34 @@ public class AdventurerBDI
 		});
 		
 		
-		/// Set the timer to count when to pay for life expenses
-		nextPayment = System.currentTimeMillis() + paymentInterval; 
 		
 		/// Generate the gold amount to retire
 		retirementGold = ThreadLocalRandom.current().nextInt(minRetireGold, maxRetireGold + 1);
 		
+		/// Set the timer to count when to pay for life expenses
+		//nextPayment = System.currentTimeMillis() + paymentInterval;
+		
+		
+		// very unsafe...
+		leCapability.initialize(name, id, ThreadLocalRandom.current().nextInt(5, 10 + 1)).get();
+		
 		/// Generate a small current gold amount
-		currentGold = ThreadLocalRandom.current().nextInt(5, 10 + 1);
+		//currentGold = ThreadLocalRandom.current().nextInt(5, 10 + 1);
 		
 		announcedAuctions = new Hashtable<String, Auction>();
 		
 		riskLevel = ThreadLocalRandom.current().nextInt(1, 4);
 		
-		payExpensesGoal = new PayExpensesGoal();
-		bdiFeature.dispatchTopLevelGoal(payExpensesGoal);
+		//payExpensesGoal = new lifeExpensesCapability.PayExpensesGoal();
+		bdiFeature.dispatchTopLevelGoal(leCapability.new PayExpensesGoal());
 		improveGoal = new ImproveGoal();
 		bdiFeature.dispatchTopLevelGoal(improveGoal);
+		bdiFeature.dispatchTopLevelGoal(new LiveGoal());
 		
-		System.out.println(name);
+		//System.out.println(name);
 		
-		System.out.println("Adventurer " + name + " has arrived! Goal: " + retirementGold + ". Abilities:\n" + attributes.toString());
+		System.out.println("Adventurer " + name + " has arrived! Goal: " + retirementGold + " (" + 
+				leCapability.getCurrentGold() + "). Abilities:\n" + attributes.toString());
 		
 		
 		// Uncomment for communication testing
@@ -280,29 +264,30 @@ public class AdventurerBDI
 	
 	//// Goals
 	
-	
-	@Goal(deliberation=@Deliberation(inhibits={AcquireQuestGoal.class, DoQuestGoal.class, FormGroupGoal.class,
-			ImproveGoal.class}), excludemode=ExcludeMode.Never, unique=true)
-	public class PayExpensesGoal
+	@Goal(deliberation=@Deliberation(inhibits={LifeExpensesCapability.PayExpensesGoal.class, AcquireQuestGoal.class, 
+			DoQuestGoal.class, FormGroupGoal.class, ImproveGoal.class, RetireGoal.class, ConsiderOffer.class}),
+			unique=true)
+	public class LiveGoal
 	{
-		@GoalMaintainCondition(beliefs= {"currentTime","nextPayment"})
+		@GoalMaintainCondition(beliefs= {"leCapability.dying"})
 		public Boolean checkMaintain()
 		{
-			return currentTime < nextPayment;
+			System.out.println("Dying = " + leCapability.getDying());
+			return !leCapability.getDying();
 		}
-		
-		/*@GoalTargetCondition()
-		public Boolean targetMaintain()
-		{
-			return currentTime < nextPayment;
-		}*/
 	}
 	
-	@Goal(deliberation=@Deliberation(inhibits={PayExpensesGoal.class}), unique=true)
+	
+	@Goal(deliberation=@Deliberation(inhibits={LifeExpensesCapability.PayExpensesGoal.class}), unique=true)
 	public class RetireGoal 
 	{
-		@GoalCreationCondition(beliefs= {"readyToRetire"})
-		public RetireGoal() {}
+		//@GoalCreationCondition(beliefs= {"readyToRetire"})
+		//public RetireGoal() {}
+		@GoalMaintainCondition(beliefs={"leCapability.currentGold"})
+		public Boolean checkMaintain()
+		{
+			return leCapability.getCurrentGold() < retirementGold;
+		}
 	}
 	
 	@Goal(unique=true, recur=true, recurdelay=1)

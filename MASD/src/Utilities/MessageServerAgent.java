@@ -1,5 +1,6 @@
 package Utilities;
 
+import javafx.util.Pair;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -82,6 +83,7 @@ public class MessageServerAgent implements IMessageService
 	//public IFuture<Void> send(Map<String, Object> msg)
 	public IFuture<Void> send(Message msg)
 	{
+		System.out.println("Bump 0");
 		if (msg.getBroadcast())
 		{
 			if (subscribersByType.containsKey(msg.getReceiver()))
@@ -99,19 +101,24 @@ public class MessageServerAgent implements IMessageService
 		}
 		else
 		{
+			System.out.println("Bump 1");
 			if (subscribers.containsKey(msg.getReceiver()))
 			{
+				System.out.println("Bump 2");
 				if(!subscribers.get(msg.getReceiver()).addIntermediateResultIfUndone(msg))
 				{
 					System.out.println("Removed: "+subscribers.get(msg.getReceiver()));
 					subscribers.remove(msg.getReceiver());
 				}
+				System.out.println("Bump 3");
 			}
 			else
 			{
+				System.out.println("Bump 4");
 				System.out.println("Unknown message receiver: " + (String)msg.getReceiver());
 			}
 		}
+		System.out.println("Bump 5");
 
 		return IFuture.DONE;
 	}

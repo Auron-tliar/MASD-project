@@ -34,12 +34,12 @@ public class ConsiderOfferPlan
 		Integer price = (Integer)content.get("Price");
 		Double cap = 10.0 + capa.riskLevel;
 		
-		if (price < capa.currentGold - capa.paymentAmount*(4 - capa.riskLevel) &&
+		if (price < capa.leCapability.getCurrentGold() - capa.leCapability.getPaymentAmount()*(4 - capa.riskLevel) &&
 				new Attributes(cap, cap, cap).greaterOrEqual(attr.sum(capa.attributes)) &&
 				price < attr.mean() * (cap * 0.1))
 		{
 			capa.messageServer.send(new Message(capa.id, offer.getSender(), Message.Performatives.accept, 
-					capa.payGold(price), "AcquireEquipment", false));
+					capa.leCapability.payGold(price), "AcquireEquipment", false));
 		}
 		else
 		{

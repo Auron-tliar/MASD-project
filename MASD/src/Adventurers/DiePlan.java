@@ -1,22 +1,24 @@
 package Adventurers;
 
-import Utilities.Message;
-
 import jadex.bdiv3.annotation.Plan;
 import jadex.bdiv3.annotation.PlanBody;
 import jadex.bdiv3.annotation.PlanCapability;
+import jadex.bdiv3.runtime.IPlan;
 import jadex.commons.future.IFuture;
 
 @Plan
-public class AskForEquipmentPlan
+public class DiePlan 
 {
 	@PlanCapability
 	protected AdventurerBDI capa;
 	
 	@PlanBody
-	public IFuture<Void> body()
+	public IFuture<Void> body(IPlan plan)
 	{
-		//capa.messageServer.send(new Message(capa.id, "Crafters", Message.Performatives.query, "", "AcquireEquipment", true));
+		System.out.println("Help!");
+		capa.Die();
+		
+		plan.waitFor(100000);
 		
 		return IFuture.DONE;
 	}

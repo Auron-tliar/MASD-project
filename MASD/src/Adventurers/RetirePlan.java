@@ -21,16 +21,17 @@ public class RetirePlan
 	@PlanBody
 	public IFuture<Void> body()
 	{
-		System.out.println("Checking gold...");
+		/*System.out.println("Checking gold...");
 		if (capa.currentGold < capa.retirementGold)
 		{
 			return IFuture.DONE;
-		}
+		}*/
 		
-		System.out.println("Adventurer " + capa.name + " has successfully saved " + capa.currentGold + 
+		System.out.println("Adventurer " + capa.name + " has successfully saved " + capa.leCapability.getCurrentGold() + 
 				" gold and now retires! Attributes:\n" + capa.attributes);
 		
-		capa.messageServer.send(new Message(capa.id, "Overseer", Message.Performatives.inform, capa.currentGold, "Retirement", false));
+		capa.messageServer.send(new Message(capa.id, "Overseer", Message.Performatives.inform, 
+				capa.leCapability.getCurrentGold(), "Retirement", false));
 		
 		return IFuture.DONE;
 	}
