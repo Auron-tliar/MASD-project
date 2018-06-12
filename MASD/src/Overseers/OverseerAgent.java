@@ -5,6 +5,7 @@ import java.util.Map;
 
 import Utilities.IMessageService;
 import Utilities.Message;
+import Common.Attributes;
 import jadex.bridge.IComponentIdentifier;
 import jadex.bridge.IInternalAccess;
 import jadex.bridge.service.RequiredServiceInfo;
@@ -57,13 +58,9 @@ public class OverseerAgent
 		IFuture<Object> temp = requiredServicesFeature.getRequiredService("cms");
 		cms = (IComponentManagementService)temp.get();
 		
-		CreationInfo ci;
-		ITuple2Future<IComponentIdentifier, Map<String, Object>> fut;
-		IComponentIdentifier cid;
-		
 		createAgent("Utilities.MessageServerAgent.class", new String[]{}, new Object[]{});
-		createAgent("Adventurers.AdventurerBDI.class", new String[]{"name"}, new Object[]{"Alice"});
-		createAgent("Adventurers.AdventurerBDI.class", new String[]{"name"}, new Object[]{"Bob"});
+		createAgent("Adventurers.AdventurerBDI.class", new String[]{"name", "attributes"}, new Object[]{"Alice", new Attributes()});
+		createAgent("Adventurers.AdventurerBDI.class", new String[]{"name", "attributes"}, new Object[]{"Bob", new Attributes()});
 		
 
 		
@@ -83,7 +80,17 @@ public class OverseerAgent
 				if (msg.getPerformative() == Message.Performatives.request && (String)msg.getContent() == "Remove")
 				{
 					cms.destroyComponent(agentsList.get(msg.getSender()));
+					createAgent("Adventurers.AdventurerBDI.class", new String[]{"name", "attributes"},
+							new Object[]{"Herbert", new Attributes()});
 				}
+				else if (msg.getPerformative() == Message.Performatives.inform && msg.getProtocol() == "Retirement")
+				{
+					cms.destroyComponent(agentsList.get(msg.getSender()));
+
+					createAgent("Adventurers.AdventurerBDI.class", new String[]{"name", "attributes"},
+							new Object[]{"Wilbur", new Attributes()});
+				}
+				
 			}
 		});
 		

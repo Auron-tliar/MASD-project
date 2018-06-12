@@ -8,42 +8,55 @@ import jadex.commons.transformation.annotations.IncludeFields;
 import java.util.Arrays;
 
 @IncludeFields(includePrivate=true)
-public class Attributes {
-	public static final List<String> AttributeNames = Arrays.asList("Might", "Magic", "Cunning");
+public class Attributes 
+{
+	private static List<String> attributeNames = Arrays.asList("Might", "Magic", "Cunning");
+	private static Integer count = 3;
 	
-	public static final Integer Count = 3;
+	public static List<String> getAttributeNames()
+	{
+		return attributeNames;		
+	}
 	
-	public List<Double> Values = new ArrayList<Double>(); 
+	public static Integer getCount()
+	{
+		return count;
+	}
+	
+	public List<Double> Values; 
 
 	public Attributes()
 	{
-		for (int i = 0; i < Count; i++)
+		Values = new ArrayList<Double>(); 
+		for (int i = 0; i < count; i++)
 		{
-			Values.set(i, 0.0);
+			Values.add(0.0);
 		}
 	}
 	
 	public Attributes(List<Double> values)
 	{
-		for	(int i = 0; i < Count; i++)
+		Values = new ArrayList<Double>(); 
+		for	(int i = 0; i < count; i++)
 		{
-			Values.set(i, values.get(i));
+			Values.add(values.get(i));
 		}
 	}
 	
 	public Attributes(Double val1, Double val2, Double val3)
 	{
-		Values.set(0, val1);
-		Values.set(1, val2);
-		Values.set(2, val3);
+		Values = new ArrayList<Double>(); 
+		Values.add(val1);
+		Values.add(val2);
+		Values.add(val3);
 	}
 	
-	public String ToString()
+	public String toString()
 	{
-		String descr = AttributeNames.get(0) + ":\t" + Values.get(0);
-		for	(int i = 1; i < Count; i++)
+		String descr = attributeNames.get(0) + ":\t" + Values.get(0);
+		for	(int i = 1; i < count; i++)
 		{
-			descr += "\n" + AttributeNames.get(i) + ":\t" + Values.get(i);
+			descr += "\n" + attributeNames.get(i) + ": " + Values.get(i);
 		}
 		
 		return descr;
@@ -51,7 +64,7 @@ public class Attributes {
 	
 	public Boolean greaterOrEqual(Attributes attributes)
 	{
-		for (int i = 0; i < Count; i++) 
+		for (int i = 0; i < count; i++) 
 		{
 			if (Values.get(i) < attributes.Values.get(i))
 			{
@@ -60,5 +73,46 @@ public class Attributes {
 		}
 		
 		return true;
+	}
+	
+	public Attributes sum(Attributes attributes)
+	{
+		List<Double> vals = new ArrayList<Double>();
+		
+		for (int i = 0; i < count; i++)
+		{
+			vals.add(Values.get(i) + attributes.Values.get(i));
+		}
+		
+		return new Attributes(vals);
+	}
+	
+	public Double mean()
+	{
+		Double res = 0.0;
+		
+		for (int i = 0; i < count; i++)
+		{
+			res += Values.get(i);
+		}
+		
+		return res / count;
+	}
+	
+	public Integer lowest()
+	{
+		Double minVal = 100000.0;
+		Integer minInd = -1;
+		
+		for (int i = 0; i < count; i++)
+		{
+			if (Values.get(i) < minVal)
+			{
+				minVal = Values.get(i);
+				minInd = i;
+			}
+		}
+		
+		return minInd;
 	}
 }

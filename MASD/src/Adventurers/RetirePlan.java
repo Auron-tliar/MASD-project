@@ -1,15 +1,13 @@
 package Adventurers;
 
+import Utilities.Message;
 import jadex.bdiv3.annotation.Plan;
-import jadex.bdiv3.annotation.PlanAPI;
 import jadex.bdiv3.annotation.PlanBody;
 import jadex.bdiv3.annotation.PlanCapability;
-import jadex.bdiv3.annotation.PlanReason;
-import jadex.bdiv3.runtime.IPlan;
 import jadex.commons.future.IFuture;
 
 @Plan
-public class PayExpensesPlan 
+public class RetirePlan
 {
 	@PlanCapability
 	protected AdventurerBDI capa;
@@ -23,17 +21,16 @@ public class PayExpensesPlan
 	@PlanBody
 	public IFuture<Void> body()
 	{
-		if (capa.payGold(capa.paymentAmount) == -1)
+		System.out.println("Checking gold...");
+		if (capa.currentGold < capa.retirementGold)
 		{
-			System.out.println("<" + capa.name + "> Not enough gold to pay life expenses, dying...");
-			capa.Die();
 			return IFuture.DONE;
 		}
 		
-		System.out.println("<" + capa.name + "> Life expenses: " + capa.paymentAmount + 
-				", " + capa.currentGold + " gold left.");
+		System.out.println("Adventurer " + capa.name + " has successfully saved " + capa.currentGold + 
+				" gold and now retires! Attributes:\n" + capa.attributes);
 		
-		capa.setNextPayment().get();
+		capa.messageServer.send(new Message(capa.id, "Overseer", Message.Performatives.inform, capa.currentGold, "Retirement", false));
 		
 		return IFuture.DONE;
 	}
