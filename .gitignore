@@ -1,10 +1,11 @@
 /jadex-3.0.86/*
-*/bin/*
+*bin*
 *Tutorial*
 *tutorial*
 .DS_Store
 *.metadata*
 *.settings*
 *.classpath*
+*.recommenders*
 *.project*
 *$local.settings.xml
