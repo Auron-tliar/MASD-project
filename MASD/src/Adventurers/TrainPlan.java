@@ -27,8 +27,8 @@ public class TrainPlan
 		{
 			plan.waitFor(2000).get();
 			capa.attributes.Values.set(attr, capa.attributes.Values.get(attr) + 0.1);
-			capa.receiveGold(1);
-			System.out.println("Round " + i);
+			//capa.receiveGold(1);
+			//System.out.println("Round " + i);
 		}
 		
 		return IFuture.DONE;

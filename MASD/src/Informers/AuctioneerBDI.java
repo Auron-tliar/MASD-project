@@ -19,9 +19,6 @@ public class AuctioneerBDI {
 	@Belief
 	protected Quest quest;
 	
-	@Belief
-	protected long auctionTimeout = 10000;
-	
 	@AgentBody
 	public void body()
 	{

@@ -77,8 +77,10 @@ public class OverseerAgent
 		{
 			public void intermediateResultAvailable(Message msg)
 			{
-				if (msg.getPerformative() == Message.Performatives.request && (String)msg.getContent() == "Remove")
+				System.out.println("Mail for Overseer: " + msg);
+				if (msg.getPerformative() == Message.Performatives.inform && msg.getProtocol() == "Death")
 				{
+					System.out.println("Killing...");
 					cms.destroyComponent(agentsList.get(msg.getSender()));
 					createAgent("Adventurers.AdventurerBDI.class", new String[]{"name", "attributes"},
 							new Object[]{"Herbert", new Attributes()});
