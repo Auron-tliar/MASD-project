@@ -1,6 +1,5 @@
 package Adventurers;
 
-import javafx.util.Pair;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.concurrent.ThreadLocalRandom;

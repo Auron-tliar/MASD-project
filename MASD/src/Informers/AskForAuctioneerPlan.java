@@ -16,7 +16,7 @@ public class AskForAuctioneerPlan {
 	@PlanBody
 	public IFuture<Void> body()
 	{
-		capa.messageServer.send(new Message(capa.id, "Auctioneers", Message.Performatives.query, "", "SetUpAuction", true));
+		capa.messageServer.send(new Message(capa.id, "Informers", Message.Performatives.query, "", "SetUpAuction", true));
 		
 		return IFuture.DONE;
 	}
