@@ -2,7 +2,11 @@ package Adventurers;
 
 import javafx.util.Pair;
 import java.util.Collection;
+import java.util.Hashtable;
 import java.util.concurrent.ThreadLocalRandom;
+
+import Informers.Auction;
+
 import java.util.Iterator;
 import java.util.Map;
 
@@ -12,7 +16,10 @@ import jadex.bdiv3.annotation.Belief;
 import jadex.bdiv3.annotation.Body;
 import jadex.bdiv3.annotation.Deliberation;
 import jadex.bdiv3.annotation.Goal;
+import jadex.bdiv3.annotation.GoalCreationCondition;
 import jadex.bdiv3.annotation.GoalMaintainCondition;
+import jadex.bdiv3.annotation.GoalParameter;
+import jadex.bdiv3.annotation.GoalRecurCondition;
 import jadex.bdiv3.annotation.GoalTargetCondition;
 import jadex.bdiv3.annotation.Plan;
 import jadex.bdiv3.annotation.Plans;
@@ -51,17 +58,19 @@ import jadex.micro.annotation.RequiredServices;
 @Arguments(
 {
 	@Argument(name="name", clazz=String.class, defaultvalue="\"default_name\""),
+	@Argument(name="attributes", clazz=Common.Attributes.class),
 	@Argument(name="id", clazz=String.class)
 })
 @Plans(
 {
 	@Plan(trigger=@Trigger(goals=AdventurerBDI.AcquireQuestGoal.class), body=@Body(AcquireQuestPlan.class)),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ConsiderOffer.class), body=@Body(ConsiderOfferPlan.class)),
 	@Plan(trigger=@Trigger(goals=AdventurerBDI.DoQuestGoal.class), body=@Body(DoQuestPlan.class)),
 	@Plan(trigger=@Trigger(goals=AdventurerBDI.FormGroupGoal.class), body=@Body(FormGroupPlan.class)),
-	@Plan(trigger=@Trigger(goals=AdventurerBDI.ImproveGoal.class), body=@Body(AcquireEquipmentPlan.class)),
-	@Plan(trigger=@Trigger(goals=AdventurerBDI.ImproveGoal.class), body=@Body(TrainPlan.class)),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ImproveGoal.class), body=@Body(AskForEquipmentPlan.class), priority=10),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ImproveGoal.class), body=@Body(TrainPlan.class), priority=0),
 	@Plan(trigger=@Trigger(goals=AdventurerBDI.PayExpensesGoal.class), body=@Body(PayExpensesPlan.class)),
-	@Plan(trigger=@Trigger(goals=AdventurerBDI.RetireGoal.class), body=@Body(TryToRetirePlan.class))
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.RetireGoal.class), body=@Body(RetirePlan.class))
 })
 
 public class AdventurerBDI 
@@ -78,33 +87,40 @@ public class AdventurerBDI
 	@AgentArgument
 	protected String name;
 	
+	@AgentArgument
+	protected String id;
+	
 	protected PayExpensesGoal payExpensesGoal;
+	protected ImproveGoal improveGoal;
 	
 	public String getName()
 	{
 		return name;
 	}
 	
-	protected static Integer minRetireGold = 100;
-	protected static Integer maxRetireGold = 500;
+	protected static Integer minRetireGold = 20;
+	protected static Integer maxRetireGold = 50;
 	
-	@AgentArgument
-	protected String id;
-	
-	protected long paymentInterval = 2000;
+	protected long paymentInterval = 30000;
 	
 	protected Integer paymentAmount = 2;
 	
-	public Integer getPaymentAmount()
+	protected Integer riskLevel;
+	
+	/*public Integer getPaymentAmount()
 	{
 		//System.out.println("Getting payment info.");
 		return paymentAmount;
-	}
+	}*/
 	
 	protected IMessageService messageServer;
 	
 	
 	/// Beliefs
+	
+	@AgentArgument
+	@Belief
+	protected Common.Attributes attributes;
 	
 	@Belief(updaterate=1000)
 	protected long currentTime = System.currentTimeMillis();
@@ -115,26 +131,60 @@ public class AdventurerBDI
 	@Belief
 	protected Integer currentGold;
 	
-	public Integer getCurrentGold()
+	@Belief
+	protected Integer retirementGold;
+	
+	@Belief
+	protected Boolean readyToRetire = false;
+	
+	@Belief
+	protected Map<String, Auction> announcedAuctions;
+	
+	@Belief(updaterate=100)
+	protected long timer100 = System.currentTimeMillis();
+	
+	
+	
+	
+
+	/*public Integer getCurrentGold()
 	{
 		//System.out.println("Getting current gold.");
 		return currentGold;
 	}
 	
-	@Belief
-	protected Integer retirementGold;
+	public Integer getRetirementGold()
+	{
+		return retirementGold;
+	}
 	
-	public Boolean payGold(Integer gold)
+	public Map<String, Informers.Auction> getAnnouncedAuctions()
+	{
+		return announcedAuctions;
+	}*/
+	
+	public Integer payGold(Integer gold)
 	{
 		//System.out.println("Paying gold.");
 		if (currentGold < gold)
 		{
-			return false;
+			return -1;
 		}
 		else
 		{
 			currentGold -= gold;
-			return true;
+			return gold;
+		}
+	}
+	
+	public void receiveGold(Integer gold)
+	{
+		System.out.println("Adventurer " + name + ": Receiving " + gold + " gold.");
+		currentGold += gold;
+		
+		if (currentGold >= retirementGold)
+		{
+			readyToRetire = true;
 		}
 	}
 	
@@ -188,8 +238,19 @@ public class AdventurerBDI
 		/// Generate a small current gold amount
 		currentGold = ThreadLocalRandom.current().nextInt(5, 10 + 1);
 		
+		announcedAuctions = new Hashtable<String, Auction>();
+		
+		riskLevel = ThreadLocalRandom.current().nextInt(1, 4);
+		
 		payExpensesGoal = new PayExpensesGoal();
 		bdiFeature.dispatchTopLevelGoal(payExpensesGoal);
+		improveGoal = new ImproveGoal();
+		bdiFeature.dispatchTopLevelGoal(improveGoal);
+		
+		System.out.println(name);
+		
+		System.out.println("Adventurer " + name + " has arrived! Goal: " + retirementGold + ". Abilities:\n" + attributes.toString());
+		
 		
 		// Uncomment for communication testing
 		/*
@@ -221,7 +282,7 @@ public class AdventurerBDI
 	
 	
 	@Goal(deliberation=@Deliberation(inhibits={AcquireQuestGoal.class, DoQuestGoal.class, FormGroupGoal.class,
-			ImproveGoal.class, RetireGoal.class}), excludemode=ExcludeMode.Never, unique=true)
+			ImproveGoal.class}), excludemode=ExcludeMode.Never, unique=true)
 	public class PayExpensesGoal
 	{
 		@GoalMaintainCondition(beliefs= {"currentTime","nextPayment"})
@@ -237,14 +298,27 @@ public class AdventurerBDI
 		}*/
 	}
 	
-	@Goal(excludemode=ExcludeMode.Never, unique=true)
+	@Goal(deliberation=@Deliberation(inhibits={PayExpensesGoal.class}), unique=true)
 	public class RetireGoal 
 	{
-		@GoalTargetCondition(beliefs= {"currentGold"})
-		public Boolean checkTarget()
+		@GoalCreationCondition(beliefs= {"readyToRetire"})
+		public RetireGoal() {}
+	}
+	
+	@Goal(unique=true, recur=true, recurdelay=1)
+	public class ImproveGoal
+	{
+		@GoalMaintainCondition(beliefs= {"timer100"})
+		public Boolean checkMaintain()
 		{
-			return currentGold >= retirementGold;
+			return false;
 		}
+		
+		/*@GoalRecurCondition(beliefs= {"timer100"})
+		public Boolean checkRecur()
+		{
+			return true;
+		}*/
 	}
 	
 	@Goal
@@ -260,13 +334,16 @@ public class AdventurerBDI
 	}
 	
 	@Goal
-	public class FormGroupGoal {
+	public class FormGroupGoal 
+	{
 
 	}
 	
 	@Goal
-	public class ImproveGoal {
-
+	public class ConsiderOffer
+	{
+		@GoalParameter
+		protected Message msg;
 	}
 
 }
