@@ -33,6 +33,8 @@ public class AuctioneerAgent {
 	
 	protected Quest quest;
 	
+	protected AuctionInfo auctionInfo;
+	
 	protected Integer highestBid;
 
 	protected String highestBidAuctioneerId;
@@ -68,9 +70,7 @@ public class AuctioneerAgent {
 	
 	public IFuture<Void> announceAuction()
 	{
-		AdventurerBDI capa;
-		
-		//capa.messageServer.send(new Message(capa.id, "Auctioneers", Message.Performatives.query, "", "NewAuction", true));
+		this.messageServer.send(new Message(this.id, "Adventurers", Message.Performatives.inform, this.auctionInfo, "NewAuction", true));
 		
 		return IFuture.DONE;
 	}
