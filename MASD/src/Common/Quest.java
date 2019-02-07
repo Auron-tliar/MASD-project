@@ -7,7 +7,7 @@ public class Quest
 {
 	private Integer questId;
 	private String name;
-	private Integer reward;
+	private Double reward;
 	private Attributes requirements;
 	
 	public Integer getQuestId()
@@ -20,7 +20,7 @@ public class Quest
 		return name;
 	}
 	
-	public Integer getReward()
+	public Double getReward()
 	{
 		return reward;
 	}
@@ -32,7 +32,7 @@ public class Quest
 	
 	public Quest() {}
 	
-	public Quest(Integer questId, String name, Integer reward, Attributes requirements)
+	public Quest(Integer questId, String name, Double reward, Attributes requirements)
 	{
 		this.questId = questId;
 		this.name = name;

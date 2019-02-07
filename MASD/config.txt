@@ -1,0 +1,11 @@
+Adventurers=4
+Informers=4
+Crafters=4
+MinStartingAttributes=10
+MaxStartingAttributes=10
+MinStartingGold=15
+MaxStartingGold=30
+MinPrice=0.1
+MinIncrease=0.1
+QuestNames=
+Names=Pa,Leletthildi,Chethal,Dogar,Lacmeri,Helmcwen,Guthwald,Ica,Wyn,Trigrim,Betda,Thohol,Dino,Sonfled,Ana,Charne,Joantom,Nanthony,Gepaul,Anchard

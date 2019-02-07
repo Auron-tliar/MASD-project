@@ -1,20 +1,21 @@
 package Adventurers;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
-import Adventurers.AdventurerBDI.AcquireQuestGoal;
-import Adventurers.AdventurerBDI.DoQuestGoal;
-import Adventurers.AdventurerBDI.FormGroupGoal;
-import Adventurers.AdventurerBDI.ImproveGoal;
 //import Common.PayExpensesPlan;
 import Informers.Auction;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
+import Common.Attributes;
+import Common.Equipment;
 import Common.LifeExpensesCapability;
+import Common.Quest;
 import Utilities.IMessageService;
 import Utilities.Message;
 import jadex.bdiv3.annotation.Belief;
@@ -33,12 +34,15 @@ import jadex.bdiv3.annotation.Plans;
 import jadex.bdiv3.annotation.Trigger;
 import jadex.bdiv3.features.IBDIAgentFeature;
 import jadex.bdiv3.model.MProcessableElement.ExcludeMode;
+import jadex.bdiv3.runtime.impl.GoalFailureException;
 import jadex.bridge.IComponentStep;
 import jadex.bridge.IInternalAccess;
 import jadex.bridge.component.IExecutionFeature;
 import jadex.bridge.service.RequiredServiceInfo;
 import jadex.bridge.service.component.IRequiredServicesFeature;
+import jadex.bridge.service.search.SServiceProvider;
 import jadex.bridge.service.types.cms.IComponentManagementService;
+import jadex.commons.Tuple2;
 import jadex.commons.future.Future;
 import jadex.commons.future.IFuture;
 import jadex.commons.future.ISubscriptionIntermediateFuture;
@@ -47,6 +51,8 @@ import jadex.micro.annotation.Agent;
 import jadex.micro.annotation.AgentArgument;
 import jadex.micro.annotation.AgentBody;
 import jadex.micro.annotation.AgentFeature;
+import jadex.micro.annotation.AgentKilled;
+import jadex.micro.annotation.AgentService;
 import jadex.micro.annotation.Argument;
 import jadex.micro.annotation.Arguments;
 import jadex.micro.annotation.Binding;
@@ -65,19 +71,42 @@ import jadex.micro.annotation.RequiredServices;
 @Arguments(
 {
 	@Argument(name="name", clazz=String.class, defaultvalue="\"default_name\""),
-	@Argument(name="attributes", clazz=Common.Attributes.class),
+	@Argument(name="baseAttributes", clazz=Common.Attributes.class),
+	@Argument(name="startingGold", clazz=Double.class, defaultvalue="5"),
 	@Argument(name="id", clazz=String.class)
 })
 @Plans(
 {
 	@Plan(trigger=@Trigger(goals=AdventurerBDI.AcquireQuestGoal.class), body=@Body(AcquireQuestPlan.class)),
-	@Plan(trigger=@Trigger(goals=AdventurerBDI.ConsiderOffer.class), body=@Body(ConsiderOfferPlan.class)),
+	//@Plan(trigger=@Trigger(goals=AdventurerBDI.AuctionWaitGoal.class), body=@Body(WaitPlan.class)),
+	//@Plan(trigger=@Trigger(goals=AdventurerBDI.ConsiderOffer.class), body=@Body(ConsiderOfferPlan.class)),
 	@Plan(trigger=@Trigger(goals=AdventurerBDI.DoQuestGoal.class), body=@Body(DoQuestPlan.class)),
-	@Plan(trigger=@Trigger(goals=AdventurerBDI.FormGroupGoal.class), body=@Body(FormGroupPlan.class)),
+	//@Plan(trigger=@Trigger(goals=AdventurerBDI.FormGroupGoal.class), body=@Body(FormGroupPlan.class)),
 	@Plan(trigger=@Trigger(goals=AdventurerBDI.ImproveGoal.class), body=@Body(AskForEquipmentPlan.class), priority=10),
 	@Plan(trigger=@Trigger(goals=AdventurerBDI.ImproveGoal.class), body=@Body(TrainPlan.class), priority=0),
 	@Plan(trigger=@Trigger(goals=AdventurerBDI.LiveGoal.class), body=@Body(DiePlan.class)),
-	@Plan(trigger=@Trigger(goals=AdventurerBDI.RetireGoal.class), body=@Body(RetirePlan.class))
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.PayTaxGoal.class), body=@Body(PayTaxPlan.class)),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.RetireGoal.class), body=@Body(RetirePlan.class)),
+	
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ProcessMail.class), body=@Body(Adventurers.ResAcquireOfferPlan.class)),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ProcessMail.class), body=@Body(Adventurers.ResAdventurerDescriptionPlan.class)),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ProcessMail.class), body=@Body(Adventurers.ResAdventurerProposalPlan.class)),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ProcessMail.class), body=@Body(Adventurers.ResAdventurerResponsePlan.class)),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ProcessMail.class), body=@Body(Adventurers.ResAdventurerUpdatePlan.class)),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ProcessMail.class), body=@Body(Adventurers.ResAuctionAnnouncedPlan.class)),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ProcessMail.class), body=@Body(Adventurers.ResAuctionCollectPlan.class)),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ProcessMail.class), body=@Body(Adventurers.ResAuctionResultPlan.class)),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ProcessMail.class), body=@Body(Adventurers.ResAuctionStartPlan.class)),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ProcessMail.class), body=@Body(Adventurers.ResAuctionUpdatePlan.class)),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ProcessMail.class), body=@Body(Adventurers.ResMinProfitRequestPlan.class)),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ProcessMail.class), body=@Body(Adventurers.ResReceiveEquipmentPlan.class)),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ProcessMail.class), body=@Body(Adventurers.ResReceiveMinProfitPlan.class)),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ProcessMail.class), body=@Body(Adventurers.ResReceiveQuestPlan.class)),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ProcessMail.class), body=@Body(Adventurers.ResRequestPaymentPlan.class)),
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ProcessMail.class), body=@Body(Adventurers.ResUpdateTaxPlan.class)),
+	
+	@Plan(trigger=@Trigger(goals=AdventurerBDI.ProcessMail.class), body=@Body(Adventurers.ResDefaultPlan.class), 
+	priority=-100)
 })
 
 public class AdventurerBDI 
@@ -88,14 +117,17 @@ public class AdventurerBDI
 	@AgentFeature 
 	protected IBDIAgentFeature bdiFeature;
 	
-	@AgentFeature
-	protected IRequiredServicesFeature requiredServicesFeature;
+	//@AgentFeature
+	//protected IRequiredServicesFeature requiredServicesFeature;
 	
 	@AgentArgument
 	protected String name;
 	
 	@AgentArgument
 	protected String id;
+	
+	@AgentArgument
+	protected Double startingGold;
 	
 	@Capability
 	protected LifeExpensesCapability leCapability = new LifeExpensesCapability();
@@ -108,91 +140,139 @@ public class AdventurerBDI
 		return name;
 	}
 	
-	protected static Integer minRetireGold = 20;
-	protected static Integer maxRetireGold = 50;
+	protected static Integer minRetireGold = 100;
+	protected static Integer maxRetireGold = 200;
 	
 	
 	protected Integer riskLevel;
 	
-	/*public Integer getPaymentAmount()
-	{
-		//System.out.println("Getting payment info.");
-		return paymentAmount;
-	}*/
 	
-	protected IMessageService messageServer;
+	@AgentService
+	protected IMessageService messageServer;// = (IMessageService)(requiredServicesFeature.getRequiredService("messageServer").get());
 	
 	
 	/// Beliefs
 	
+	@Belief
 	@AgentArgument
-	@Belief
-	protected Common.Attributes attributes;
-	
-	
-	
+	protected Attributes baseAttributes;
 	
 	@Belief
+	protected List<Equipment> equipmentList = new ArrayList<Equipment>();
+	
+	@Belief
+	protected Attributes equipmentSum = new Attributes();
+	
+	
+	@Belief(dynamic=true)
+	protected Attributes totalAttributes = sum(baseAttributes, equipmentSum);
+
+	@Belief
+	protected Quest currentQuest = null;
+
 	protected Integer retirementGold;
 	
 	@Belief
-	protected Boolean readyToRetire = false;
+	protected Auction announcedAuction;
 	
 	@Belief
-	protected Map<String, Auction> announcedAuctions;
+	protected List<Message> receivedMessages = new ArrayList<Message>();
+
+	@Belief
+	protected Boolean forming = false;
 	
-	@Belief(updaterate=100)
-	protected long timer100 = System.currentTimeMillis();
+	@Belief
+	protected Boolean doneFormation = true;
+	
+	@Belief
+	protected Boolean stopFormation = false;
+	
+	@Belief
+	protected Integer sendIndex = -1;
+	
+	@Belief
+	protected Boolean readyToAuction = false;
+	
+	@Belief
+	protected Integer collectedResponces = 0;
 	
 	
+	protected Boolean auctioning = false;
+	
+	protected String auctioneerId;
+	
+	protected List<String> sentAdventurers;
+	
+	protected Integer prevMessageCount = 0;
+	
+	protected Double taxPercentage = 0.1;
+	
+	protected Boolean collecting = false;
+	
+	protected long collectingTime = 3000;
+	protected long waitTime = 2000;
+	
+	protected Map<String, Attributes> lfgAdventurers = new HashMap<String, Attributes>();
+	
+	protected List<Tuple2<String, Double>> advValuations;
+	
+	@Belief
+	protected String groupLeader;
+	
+	protected List<String> group;
+	
+	protected Attributes groupAtributes;
+	
+	protected Double minProfit = 1.0;
+	
+	protected Double maxPrice = 1000.0;
+	
+	protected Double currentBid = 1.0;
+	
+	protected long lastQuestTime;
+	
+	protected Attributes sum(Attributes attr1, Attributes attr2)
+	{
+		if (attr1 != null && attr2 != null)
+		{
+			return attr1.add(attr2);
+		}
+		else if (attr1 == null)
+		{
+			return (new Attributes()).add(attr2);
+		}
+		else
+		{
+			return attr1.add(new Attributes());
+		}
+	}
 	
 	public void Die()
 	{
-		System.out.println("Got here");
-		messageServer.send(new Message(id, "Overseer", Message.Performatives.inform, "", "Death", false));
+		messageServer.send(new Message(id, "Overseer", Message.Performatives.inform, "Adventurer", "Death", false));
 	}
 	
-
-	/*public Integer getCurrentGold()
+	public void payTax(Double sum)
 	{
-		//System.out.println("Getting current gold.");
-		return currentGold;
+		messageServer.send(new Message(id, "Overseer", Message.Performatives.payment, leCapability.payGold(sum), "Tax", false));
 	}
 	
-	public Integer getRetirementGold()
-	{
-		return retirementGold;
-	}
-	
-	public Map<String, Informers.Auction> getAnnouncedAuctions()
-	{
-		return announcedAuctions;
-	}*/
-	
-	/*public IFuture<Void> setNextPayment()
-	{
-		//lifeExpensesCapability.nextPayment += paymentInterval;
-		lifeExpensesCapability.setNextPayment();
-		
-		return IFuture.DONE;
-	}*/
 	
 	@AgentBody
 	public void body()
 	{
-		IFuture<Object> temp = requiredServicesFeature.getRequiredService("messageServer");
-		messageServer = (IMessageService)temp.get();
-		
 		final ISubscriptionIntermediateFuture<Message> fut = messageServer.subscribe(id);
 		
 		/// Change Adventurers to other types ///
-		final ISubscriptionIntermediateFuture<Message> futType = messageServer.subscribeType("Adventurers");
+		final ISubscriptionIntermediateFuture<Message> futType = messageServer.subscribeType(id, "Adventurers");
 		
 		fut.addResultListener(new IntermediateDefaultResultListener<Message>()
 		{
 			public void intermediateResultAvailable(Message msg)
 			{
-				System.out.println(msg);
+				//System.out.println(msg);
+				System.out.println("Adventurer " + name + " has received a message: " + msg);
+				receivedMessages.add(msg);
 			}
 		});
 		
@@ -200,7 +280,9 @@ public class AdventurerBDI
 		{
 			public void intermediateResultAvailable(Message msg)
 			{
-				System.out.println(msg);
+				//System.out.println(msg);
+				System.out.println("Adventurer " + name + " has heard a broadcast: " + msg);
+				receivedMessages.add(msg);
 			}
 		});
 		
@@ -209,125 +291,118 @@ public class AdventurerBDI
 		/// Generate the gold amount to retire
 		retirementGold = ThreadLocalRandom.current().nextInt(minRetireGold, maxRetireGold + 1);
 		
-		/// Set the timer to count when to pay for life expenses
-		//nextPayment = System.currentTimeMillis() + paymentInterval;
-		
 		
 		// very unsafe...
-		leCapability.initialize(name, id, ThreadLocalRandom.current().nextInt(5, 10 + 1)).get();
 		
-		/// Generate a small current gold amount
-		//currentGold = ThreadLocalRandom.current().nextInt(5, 10 + 1);
+		leCapability.initialize(name, id, startingGold);
 		
-		announcedAuctions = new Hashtable<String, Auction>();
+		announcedAuction = null;
+		
+		lastQuestTime = System.currentTimeMillis();
 		
 		riskLevel = ThreadLocalRandom.current().nextInt(1, 4);
 		
+		if (baseAttributes == null)
+		{
+			baseAttributes = new Attributes();
+		}
+		
 		//payExpensesGoal = new lifeExpensesCapability.PayExpensesGoal();
-		bdiFeature.dispatchTopLevelGoal(leCapability.new PayExpensesGoal());
 		improveGoal = new ImproveGoal();
+		//bdiFeature.dispatchTopLevelGoal(new AuctionWaitGoal());
 		bdiFeature.dispatchTopLevelGoal(improveGoal);
 		bdiFeature.dispatchTopLevelGoal(new LiveGoal());
+		bdiFeature.dispatchTopLevelGoal(new RetireGoal());
+		bdiFeature.dispatchTopLevelGoal(leCapability.new PayExpensesGoal());
+		//bdiFeature.dispatchTopLevelGoal(new FormGroupGoal());
+		bdiFeature.dispatchTopLevelGoal(new AcquireQuestGoal());
+		bdiFeature.dispatchTopLevelGoal(new DoQuestGoal());
 		
-		//System.out.println(name);
-		
-		System.out.println("Adventurer " + name + " has arrived! Goal: " + retirementGold + " (" + 
-				leCapability.getCurrentGold() + "). Abilities:\n" + attributes.toString());
-		
-		
-		// Uncomment for communication testing
-		/*
-		IComponentStep<Void> step = new IComponentStep<Void>()
-		{
-			final int[] cnt = new int[1];
-			public IFuture<Void> execute(IInternalAccess ia)
-			{
-				messageServer.send(new Message(id, "Adventurers", Message.Performatives.inform,
-						cnt[0], "Test protocol", true));//msg);
-				if(cnt[0]<10)
-				{
-					agent.getComponentFeature(IExecutionFeature.class).waitForDelay(1000, this);
-				}
-				else
-				{
-					fut.terminate();
-					futType.terminate();
-				}
-				return IFuture.DONE;
-			}
-		};
-		agent.getComponentFeature(IExecutionFeature.class).waitForDelay(1000, step);
-		*/
+		System.out.println("Adventurer " + name + " (" + id + ") has arrived! Goal: " + retirementGold + " (" + 
+				leCapability.getCurrentGold() + "). Attributes: " + baseAttributes.toString());
+	}
+	
+
+	@AgentKilled
+	public void shutdown()
+	{
+		messageServer.unsubscribe(id);
+		agent.killComponent();
 	}
 	
 	
 	//// Goals
 	
 	@Goal(deliberation=@Deliberation(inhibits={LifeExpensesCapability.PayExpensesGoal.class, AcquireQuestGoal.class, 
-			DoQuestGoal.class, FormGroupGoal.class, ImproveGoal.class, RetireGoal.class, ConsiderOffer.class}),
+			DoQuestGoal.class, ImproveGoal.class, RetireGoal.class}),//, ConsiderOffer.class}),
 			unique=true)
 	public class LiveGoal
 	{
 		@GoalMaintainCondition(beliefs= {"leCapability.dying"})
 		public Boolean checkMaintain()
 		{
-			System.out.println("Dying = " + leCapability.getDying());
 			return !leCapability.getDying();
 		}
 	}
 	
 	
-	@Goal(deliberation=@Deliberation(inhibits={LifeExpensesCapability.PayExpensesGoal.class}), unique=true)
+	@Goal(unique=true)
 	public class RetireGoal 
 	{
-		//@GoalCreationCondition(beliefs= {"readyToRetire"})
-		//public RetireGoal() {}
 		@GoalMaintainCondition(beliefs={"leCapability.currentGold"})
 		public Boolean checkMaintain()
 		{
-			return leCapability.getCurrentGold() < retirementGold;
+			return ((leCapability.getCurrentGold()) < retirementGold);
 		}
 	}
 	
-	@Goal(unique=true, recur=true, recurdelay=1)
+	@Goal(unique=true, recur=true, recurdelay=10)
 	public class ImproveGoal
-	{
-		@GoalMaintainCondition(beliefs= {"timer100"})
-		public Boolean checkMaintain()
-		{
-			return false;
-		}
-		
-		/*@GoalRecurCondition(beliefs= {"timer100"})
-		public Boolean checkRecur()
-		{
-			return true;
-		}*/
-	}
+	{}
 	
 	@Goal
-	public class AcquireQuestGoal
-	{
-
-	}
-	
-	@Goal
-	public class DoQuestGoal
-	{
-
-	}
-	
-	@Goal
-	public class FormGroupGoal 
-	{
-
-	}
-	
-	@Goal
-	public class ConsiderOffer
+	public class ProcessMail
 	{
 		@GoalParameter
-		protected Message msg;
+		protected Message message = null;
+		
+		@GoalCreationCondition(beliefs="receivedMessages")
+		public ProcessMail()
+		{
+			if (prevMessageCount >= (receivedMessages.size()))
+			{
+				prevMessageCount = receivedMessages.size();
+				return;
+			}
+			this.message = receivedMessages.get(prevMessageCount);
+			prevMessageCount = receivedMessages.size();
+		}
 	}
+	
+	@Goal
+	public class PayTaxGoal
+	{
+		@GoalParameter
+		protected Integer taxAmount = 0;
+		
+		@GoalCreationCondition(beliefs="leCapability.currentGold")
+		public PayTaxGoal()
+		{
+			if (leCapability.getGoldDelta() > 0)
+			{
+				taxAmount = (int)(Math.ceil(leCapability.getGoldDelta() * taxPercentage));
+			}
+			else
+			{
+				taxAmount = 0;
+			}
+		}
+	}
+	
+	@Goal(deliberation=@Deliberation(inhibits={ImproveGoal.class}), unique=true)
+	public class AcquireQuestGoal{ }
+	
+	@Goal(deliberation=@Deliberation(inhibits={ImproveGoal.class}))
+	public class DoQuestGoal { }
 
 }

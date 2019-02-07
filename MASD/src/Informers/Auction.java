@@ -7,12 +7,12 @@ import jadex.commons.transformation.annotations.IncludeFields;
 public class Auction
 {
 	private Integer id;
-	private Integer startCost;
-	private Integer reward;
+	private Double startCost;
+	private Double reward;
 	private Common.Attributes requirements;
-	private Common.Quest quest;
+	//private Common.Quest quest;
 	private long startTime;
-	private Integer minimalBid;
+	private Double minimalBid;
 	private long maxWait;
 	
 	public Integer getId()
@@ -20,12 +20,12 @@ public class Auction
 		return id;
 	}
 	
-	public Integer getStartCost()
+	public Double getStartCost()
 	{
 		return startCost;
 	}
 	
-	public Integer getReward()
+	public Double getReward()
 	{
 		return reward;
 	}
@@ -40,7 +40,7 @@ public class Auction
 		return startTime;
 	}
 	
-	public Integer getMinimalBid()
+	public Double getMinimalBid()
 	{
 		return minimalBid;
 	}
@@ -52,11 +52,11 @@ public class Auction
 	
 	public Auction() {}
 	
-	public Auction(Quest quest, Integer startCost, long startTime, Integer minimalBid, long maxWait)
+	public Auction(Quest quest, Double startCost, long startTime, Double minimalBid, long maxWait)
 	{
 		id = quest.getQuestId();
 		this.startCost = startCost;
-		this.quest = quest;
+		//this.quest = quest;
 		reward = quest.getReward();
 		requirements = quest.getRequirements();
 		this.startTime = startTime;

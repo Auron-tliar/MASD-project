@@ -1,6 +1,6 @@
 package Utilities;
 
-
+import javafx.util.Pair;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -45,13 +45,13 @@ public class MessageServerAgent implements IMessageService
 	//protected Integer lastId = -1;
 	
 	protected Map<String, SubscriptionIntermediateFuture<Message>> subscribers;
-	protected Map<String, List<SubscriptionIntermediateFuture<Message>>> subscribersByType;
+	protected Map<String, Map<String, SubscriptionIntermediateFuture<Message>>> subscribersByType;
 	
 	@AgentCreated
 	public void agentCreated()
 	{
 		this.subscribers = new HashMap<String, SubscriptionIntermediateFuture<Message>>();
-		this.subscribersByType = new HashMap<String, List<SubscriptionIntermediateFuture<Message>>>();
+		this.subscribersByType = new HashMap<String, Map<String, SubscriptionIntermediateFuture<Message>>>();
 	}
 
 	public ISubscriptionIntermediateFuture<Message> subscribe(String receiver)
@@ -65,62 +65,79 @@ public class MessageServerAgent implements IMessageService
 		return ret;
 	}
 	
-	public ISubscriptionIntermediateFuture<Message> subscribeType(String type)
+	public ISubscriptionIntermediateFuture<Message> subscribeType(String receiver, String type)
 	{
 		SubscriptionIntermediateFuture<Message> ret = 
 				(SubscriptionIntermediateFuture<Message>)SFuture.getNoTimeoutFuture(SubscriptionIntermediateFuture.class, agent);
 		
-		List<SubscriptionIntermediateFuture<Message>> subs = subscribersByType.get(type);
+		Map<String, SubscriptionIntermediateFuture<Message>> subs = subscribersByType.get(type);
+		//Map<String> ids = subscriberIdsByType.get(type);
 		if(subs==null)
 		{
-			subs = new ArrayList<SubscriptionIntermediateFuture<Message>>();
+			subs = new HashMap<String, SubscriptionIntermediateFuture<Message>>();
+			//ids = new ArrayList<String>();
 			subscribersByType.put(type, subs);
+			//subscriberIdsByType.put(type, ids);
 		}
-		subs.add(ret);
+		subs.put(receiver, ret);
+		//ids.add(receiver);
 		return ret;
 	}
 
 	//public IFuture<Void> send(Map<String, Object> msg)
 	public IFuture<Void> send(Message msg)
 	{
-		System.out.println("Bump 0");
 		if (msg.getBroadcast())
 		{
 			if (subscribersByType.containsKey(msg.getReceiver()))
 			{
-				for (Iterator<SubscriptionIntermediateFuture<Message>> it = subscribersByType.get(msg.getReceiver()).iterator(); it.hasNext(); )
+				//for (Iterator<SubscriptionIntermediateFuture<Message>> it = subscribersByType.get(msg.getReceiver()).iterator(); it.hasNext(); )
+				for (String id : subscribersByType.get(msg.getReceiver()).keySet())
 				{
-					SubscriptionIntermediateFuture<Message> sub = it.next();
+					SubscriptionIntermediateFuture<Message> sub = subscribersByType.get(msg.getReceiver()).get(id);
+					//SubscriptionIntermediateFuture<Message> sub = it.next();
 					if(!sub.addIntermediateResultIfUndone(msg))
 					{
 						System.out.println("Removed: "+sub);
-						it.remove();
+						subscribersByType.get(msg.getReceiver()).remove(id);
+						//it.remove();
 					}
 				}
 			}
 		}
 		else
 		{
-			System.out.println("Bump 1");
 			if (subscribers.containsKey(msg.getReceiver()))
 			{
-				System.out.println("Bump 2");
 				if(!subscribers.get(msg.getReceiver()).addIntermediateResultIfUndone(msg))
 				{
 					System.out.println("Removed: "+subscribers.get(msg.getReceiver()));
 					subscribers.remove(msg.getReceiver());
 				}
-				System.out.println("Bump 3");
 			}
 			else
 			{
-				System.out.println("Bump 4");
 				System.out.println("Unknown message receiver: " + (String)msg.getReceiver());
 			}
 		}
-		System.out.println("Bump 5");
 
 		return IFuture.DONE;
 	}
-
+	
+	public List<String> getSubscribersByType(String type)
+	{
+		return new ArrayList<String>(subscribersByType.get(type).keySet());
+	}
+	
+	public void unsubscribe(String receiver)
+	{
+		subscribers.remove(receiver);
+		for	(String type : subscribersByType.keySet())
+		{
+			if (subscribersByType.get(type).containsKey(receiver))
+			{
+				subscribersByType.get(type).remove(receiver);
+			}
+		}
+	}
 }

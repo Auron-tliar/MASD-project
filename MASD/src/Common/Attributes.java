@@ -41,6 +41,8 @@ public class Attributes
 		{
 			Values.add(values.get(i));
 		}
+		
+		//System.out.println("And here: " + Values);
 	}
 	
 	public Attributes(Double val1, Double val2, Double val3)
@@ -53,10 +55,10 @@ public class Attributes
 	
 	public String toString()
 	{
-		String descr = attributeNames.get(0) + ":\t" + Values.get(0);
+		String descr = attributeNames.get(0) + ": " + Values.get(0);
 		for	(int i = 1; i < count; i++)
 		{
-			descr += "\n" + attributeNames.get(i) + ": " + Values.get(i);
+			descr += ", " + attributeNames.get(i) + ": " + Values.get(i);
 		}
 		
 		return descr;
@@ -75,13 +77,27 @@ public class Attributes
 		return true;
 	}
 	
-	public Attributes sum(Attributes attributes)
+	public Attributes add(Attributes attributes)
 	{
+		//System.out.println("Got here: " + Values + " + " + attributes.Values);
 		List<Double> vals = new ArrayList<Double>();
 		
 		for (int i = 0; i < count; i++)
 		{
 			vals.add(Values.get(i) + attributes.Values.get(i));
+		}
+		
+		//System.out.println("Done: " + vals);
+		return new Attributes(vals);
+	}
+	
+	public Attributes subtract(Attributes attributes)
+	{
+		List<Double> vals = new ArrayList<Double>();
+		
+		for (int i = 0; i < count; i++)
+		{
+			vals.add(Math.max(0.0, Values.get(i) - attributes.Values.get(i)));
 		}
 		
 		return new Attributes(vals);
@@ -114,5 +130,42 @@ public class Attributes
 		}
 		
 		return minInd;
+	}
+	
+	public Double total()
+	{
+		Double tot = 0.0;
+		
+		for (int i = 0; i < count; i++)
+		{
+			tot += Values.get(i);
+		}
+		
+		return tot;
+	}
+	
+	
+	public Double coverage(Attributes attributes)
+	{
+		Double tot = 0.0;
+		
+		for (int i = 0; i < count; i++)
+		{
+			tot += Math.min(Values.get(i), attributes.Values.get(i));
+		}
+		
+		return tot / attributes.total();
+	}
+	
+	public Double coveredBy(Attributes attributes)
+	{
+		Double tot = 0.0;
+		
+		for (int i = 0; i < count; i++)
+		{
+			tot += Math.min(Values.get(i), attributes.Values.get(i));
+		}
+		
+		return tot / total();
 	}
 }

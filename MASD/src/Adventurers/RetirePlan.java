@@ -28,7 +28,7 @@ public class RetirePlan
 		}*/
 		
 		System.out.println("Adventurer " + capa.name + " has successfully saved " + capa.leCapability.getCurrentGold() + 
-				" gold and now retires! Attributes:\n" + capa.attributes);
+				" gold and now retires! Attributes:\n" + capa.baseAttributes);
 		
 		capa.messageServer.send(new Message(capa.id, "Overseer", Message.Performatives.inform, 
 				capa.leCapability.getCurrentGold(), "Retirement", false));

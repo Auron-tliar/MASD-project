@@ -1,6 +1,8 @@
 package Utilities;
 
-import java.util.Hashtable;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import jadex.commons.transformation.annotations.IncludeFields;
@@ -8,7 +10,11 @@ import jadex.commons.transformation.annotations.IncludeFields;
 @IncludeFields(includePrivate=true)
 public class Message
 {
-	public enum Performatives {accept, agree, confirm, failure, inform, not_understood, propose, query, refuse, reject, request}
+	public enum Performatives {accept, agree, cfp, confirm, disconfirm, failure, inform, not_understood, parcel, payment, propose,
+		query, refuse, reject, request, update}
+	
+	private static List<String> PerfNames = Arrays.asList("accept", "agree", "cfp", "confirm", "disconfirm", "failure", "inform", 
+			"not_understood", "parcel", "payment", "propose", "query", "refuse", "reject", "request", "update");
 	
 	private String sender;
 	private String receiver;
@@ -71,13 +77,14 @@ public class Message
 	
 	public String toString()
 	{
-		return ("[Message: " + "]\tSender: " + sender + "\tReceiver: " + receiver +
-				"\tContent: " + content + "\tProtocol: " + protocol + "\tBroadcast: " + broadcast);
+		return ("[Message: " + "] Sender: " + sender + ", Receiver: " + receiver + 
+				", Performative: " + PerfNames.get(performative.ordinal()) +
+				", Content: " + content + ", Protocol: " + protocol + ", Broadcast: " + broadcast);
 	}
 	
 	public Map<String, Object> toMap()
 	{
-		Map<String, Object> map = new Hashtable<String, Object>();
+		Map<String, Object> map = new HashMap<String, Object>();
 		
 		map.put("Sender", sender);
 		map.put("Receiver", receiver);

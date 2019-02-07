@@ -15,10 +15,9 @@ public class DiePlan
 	@PlanBody
 	public IFuture<Void> body(IPlan plan)
 	{
-		System.out.println("Help!");
 		capa.Die();
 		
-		plan.waitFor(100000);
+		plan.waitFor(100000).get();
 		
 		return IFuture.DONE;
 	}

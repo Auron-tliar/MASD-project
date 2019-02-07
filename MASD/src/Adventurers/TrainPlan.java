@@ -8,6 +8,7 @@ import jadex.bdiv3.annotation.PlanCapability;
 import jadex.bdiv3.annotation.PlanFailed;
 import jadex.bdiv3.annotation.PlanPassed;
 import jadex.bdiv3.runtime.IPlan;
+import jadex.bdiv3.runtime.impl.PlanFailureException;
 import jadex.commons.future.IFuture;
 
 @Plan
@@ -19,19 +20,20 @@ public class TrainPlan
 	@PlanBody
 	public IFuture<Void> body(IPlan plan)
 	{
-		Integer attr = capa.attributes.lowest();
+		Integer attr = capa.baseAttributes.lowest();
 		System.out.println("Adventurer " + capa.name + " is training " + Attributes.getAttributeNames().get(attr) + "(" + 
-				capa.attributes.Values.get(attr) + ")");
+				capa.baseAttributes.Values.get(attr) + ")");
 		
 		for (int i = 0; i < 10; i++)
 		{
 			plan.waitFor(2000).get();
-			capa.attributes.Values.set(attr, capa.attributes.Values.get(attr) + 0.1);
+			capa.baseAttributes.Values.set(attr, capa.baseAttributes.Values.get(attr) + 0.1);
 			//capa.receiveGold(1);
 			//System.out.println("Round " + i);
 		}
 		
-		return IFuture.DONE;
+		throw new PlanFailureException();
+		//return IFuture.DONE;
 	}
 	
 	@PlanPassed

@@ -7,7 +7,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import Adventurers.AdventurerBDI.AcquireQuestGoal;
 import Adventurers.AdventurerBDI.DoQuestGoal;
-import Adventurers.AdventurerBDI.FormGroupGoal;
+//import Adventurers.AdventurerBDI.FormGroupGoal;
 import Adventurers.AdventurerBDI.ImproveGoal;
 import Common.IExpensesAgent;
 import Common.Quest;
@@ -125,7 +125,7 @@ public class InformerBDI implements IExpensesAgent {
 		final ISubscriptionIntermediateFuture<Message> fut = messageServer.subscribe(name);
 		
 		/// Change Adventurers to other types ///
-		final ISubscriptionIntermediateFuture<Message> futType = messageServer.subscribeType("Adventurers");
+		final ISubscriptionIntermediateFuture<Message> futType = messageServer.subscribeType(id, "Adventurers");
 		
 		fut.addResultListener(new IntermediateDefaultResultListener<Message>()
 		{

@@ -1,8 +1,9 @@
 package Common;
 
+import Adventurers.AdventurerBDI;
 import Adventurers.AdventurerBDI.AcquireQuestGoal;
 import Adventurers.AdventurerBDI.DoQuestGoal;
-import Adventurers.AdventurerBDI.FormGroupGoal;
+//import Adventurers.AdventurerBDI.FormGroupGoal;
 import Adventurers.AdventurerBDI.ImproveGoal;
 import Utilities.IMessageService;
 import Utilities.Message;
@@ -12,6 +13,7 @@ import jadex.bdiv3.annotation.Capability;
 import jadex.bdiv3.annotation.Deliberation;
 import jadex.bdiv3.annotation.Goal;
 import jadex.bdiv3.annotation.GoalMaintainCondition;
+import jadex.bdiv3.annotation.GoalParameter;
 import jadex.bdiv3.annotation.Plan;
 import jadex.bdiv3.annotation.PlanBody;
 import jadex.bdiv3.annotation.PlanCapability;
@@ -30,44 +32,63 @@ public class LifeExpensesCapability
 	@Belief
 	protected long nextPayment;
 
-	protected Integer currentGold;
-	
 	@Belief
-	public Integer getCurrentGold()
-	{
-		return currentGold;
-	}
-	
-	@Belief
-	public void setCurrentGold(Integer currentGold)
+	protected Double currentGold;
+
+	@Belief(dynamic=true)
+	public void setCurrentGold(Double currentGold)
 	{
 		this.currentGold = currentGold;
 	}
 	
+	@Belief(dynamic=true)
+	public Double getCurrentGold()
+	{
+		return currentGold;
+	}
+	
+	protected Double goldDelta = 0.0;
+	
+	public Double getGoldDelta()
+	{
+		return goldDelta;
+	}
+
+	public void setGoldDelta(Double goldDelta)
+	{
+		this.goldDelta = goldDelta;
+	}
+
 	protected PayExpensesGoal payExpensesGoal;
 	
 	
 	protected String name;
 	protected String id;
 	
+	@Belief
 	protected Boolean dying = false;
 	
-	@Belief
+	@Belief(dynamic=true)
 	public Boolean getDying()
 	{
 		return dying;
 	}
 	
-	@Belief
+	@Belief(dynamic=true)
 	public void setDying(Boolean dying)
 	{
 		this.dying = dying; 
 	}
 	
-	protected long paymentInterval = 3000;
-	protected Integer paymentAmount = 3;
+	protected long paymentInterval = 10000;
+	protected Double paymentAmount = 2.0;
 	
-	public Integer getPaymentAmount()
+	public long getPaymentInterval()
+	{
+		return paymentInterval;
+	}
+	
+	public Double getPaymentAmount()
 	{
 		return paymentAmount;
 	}
@@ -79,69 +100,61 @@ public class LifeExpensesCapability
 		return IFuture.DONE;
 	}
 	
-	/*public void dispatchPayLifeExpensesGoal()
-	{
-		
-	}*/
-	
 	public LifeExpensesCapability() {}
 	
-	public IFuture<Void> initialize(String name, String id,	Integer startGold)
+	public IFuture<Void> initialize(String name, String id,	Double startGold)
 	{
 		this.name = name;
 		this.id = id;
-		this.currentGold = startGold;
-		
+		currentGold = startGold;
+		//currentGold = startGold;
 		nextPayment = System.currentTimeMillis() + paymentInterval;
-		currentTime = System.currentTimeMillis();
+		//currentTime = System.currentTimeMillis();
 		
 		return IFuture.DONE;
 	}
-	
-	/*public LifeExpensesCapability(String name, String id, IMessageService messageServer, Integer startGold)
-	{
-		this.name = name;
-		this.id = id;
-		this.messageServer = messageServer;
-		this.currentGold = startGold;
-		
-		nextPayment = System.currentTimeMillis() + paymentInterval;
-		currentTime = System.currentTimeMillis();
-	}*/
-	
-	/*public void Die()
-	{
-		bdiFeature.dropGoal(payExpensesGoal);
-		messageServer.send(new Message(id, "Overseer", Message.Performatives.inform, "", "Death", false));
-	}*/
 
 	
-	public Integer payGold(Integer gold)
+	public Double payGold(Double gold)
 	{
-		//System.out.println("Adventurer " + name +  ": Paying " + gold + " gold.");
+		//System.out.println("Adventurer " + name +  ": Paying " + gold + " gold (" + currentGold + ").");
 		if (currentGold < gold)
 		{
-			return -1;
+			return -1.0;
 		}
 		else
 		{
 			currentGold -= gold;
-			setCurrentGold(currentGold - gold);
+			goldDelta = -gold;
 			return gold;
 		}
 	}
 	
-	public void receiveGold(Integer gold)
+	public Double sendGold(Double gold)
 	{
-		//System.out.println("Adventurer " + name +  ": Receiving " + gold + " gold.");
-		//currentGold += gold;
-		setCurrentGold(currentGold + gold);
+		//System.out.println("Adventurer " + name +  ": Paying " + gold + " gold (" + currentGold + ").");
+		if (currentGold < gold)
+		{
+			return -1.0;
+		}
+		else
+		{
+			currentGold -= gold;
+			goldDelta = 0.0;
+			return gold;
+		}
 	}
 	
-	@Goal(deliberation=@Deliberation(inhibits={AcquireQuestGoal.class, DoQuestGoal.class, FormGroupGoal.class,
-			ImproveGoal.class}), excludemode=ExcludeMode.Never, unique=true)
-	public class PayExpensesGoal
+	public void receiveGold(Double gold)
 	{
+		//System.out.println("Adventurer " + name +  ": Receiving " + gold + " gold.");
+		currentGold += gold;
+		goldDelta = gold;
+	}
+	
+	@Goal(deliberation=@Deliberation(inhibits={ImproveGoal.class}), unique=true)//inhibits={DoQuestGoal.class, //FormGroupGoal.class,AcquireQuestGoal.class, 
+	public class PayExpensesGoal
+	{		
 		@GoalMaintainCondition(beliefs= {"currentTime","nextPayment"})
 		public Boolean checkMaintain()
 		{
@@ -156,8 +169,29 @@ public class LifeExpensesCapability
 	}
 	
 	@Plan(trigger=@Trigger(goals=PayExpensesGoal.class))
+	protected void payExpenses()
+	{
+		//System.out.println(capa.getCurrentGold());
+		if (payGold(getPaymentAmount()) == -1.0)
+		{
+			System.out.println("<" +name + "> Not enough gold to pay life expenses, dying...");
+			dying = true;
+			return;// IFuture.DONE;
+		}
+		
+		System.out.println("<" + name + "> Life expenses: " + paymentAmount + 
+				", " + getCurrentGold() + " gold left.");
+		
+		setNextPayment().get();
+		
+		//return IFuture.DONE;
+	}
+	
+	/*@Plan(trigger=@Trigger(goals=PayExpensesGoal.class))
 	public class PayExpensesPlan 
 	{
+		//@PlanCapability
+		//protected LifeExpensesCapability capa;
 		
 		//@PlanAPI
 		//protected IPlan rplan;
@@ -166,9 +200,11 @@ public class LifeExpensesCapability
 		//protected Common.PayExpensesGoal goal;
 		
 		@PlanBody
-		public IFuture<Void> body()
+		public IFuture<Void> body(LifeExpensesCapability capa)
 		{
-			if (payGold(paymentAmount) == -1)
+			System.out.println(capa.getCurrentGold());
+			//System.out.println(capa.getCurrentGold());
+			if (payGold(getPaymentAmount()) == -1)
 			{
 				System.out.println("<" +name + "> Not enough gold to pay life expenses, dying...");
 				setDying(true);
@@ -176,11 +212,11 @@ public class LifeExpensesCapability
 			}
 			
 			System.out.println("<" + name + "> Life expenses: " + paymentAmount + 
-					", " + currentGold + " gold left.");
+					", " + getCurrentGold() + " gold left.");
 			
 			setNextPayment().get();
 			
 			return IFuture.DONE;
 		}
-	}
+	}*/
 }
